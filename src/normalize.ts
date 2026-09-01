@@ -2,23 +2,37 @@ import type { NormalizedMetadata, RawMetadata } from './types.js';
 
 // Every alias list is checked in order, case- and separator-insensitive
 // ("Date Taken" / "date_taken" / "DateTaken" all resolve to "datetaken").
+// This also covers IPTC-IIM dataset names (e.g. "By-line", "Caption-Abstract")
+// and namespaced XMP property names (e.g. "dc:title", "photoshop:Headline"),
+// since normalizeKey() strips the ":" along with whitespace and separators.
 // New sources usually just mean adding one more string to a list here.
-const TITLE_KEYS = ['title', 'objectname', 'headline', 'name'];
-const DESCRIPTION_KEYS = ['description', 'imagedescription', 'caption', 'captionabstract', 'desc'];
-const DATE_KEYS = ['datetaken', 'datetimeoriginal', 'createdate', 'datecreated', 'timestamp', 'date'];
-const MAKE_KEYS = ['make', 'cameramake', 'manufacturer'];
-const MODEL_KEYS = ['model', 'cameramodel'];
-const ORIENTATION_KEYS = ['orientation'];
-const KEYWORDS_KEYS = ['keywords', 'tags', 'subject'];
-const COPYRIGHT_KEYS = ['copyright', 'rights'];
-const ARTIST_KEYS = ['artist', 'creator', 'author', 'photographer'];
-const WIDTH_KEYS = ['width', 'imagewidth', 'exifimagewidth', 'pixelwidth'];
-const HEIGHT_KEYS = ['height', 'imageheight', 'exifimageheight', 'pixelheight'];
+const TITLE_KEYS = ['title', 'objectname', 'headline', 'name', 'documenttitle', 'dctitle', 'photoshopheadline'];
+const DESCRIPTION_KEYS = [
+  'description', 'imagedescription', 'caption', 'captionabstract', 'desc', 'dcdescription',
+];
+const DATE_KEYS = [
+  'datetaken', 'datetimeoriginal', 'createdate', 'datecreated', 'timestamp', 'date',
+  'datetimedigitized', 'xmpcreatedate', 'exifdatetimeoriginal', 'photoshopdatecreated',
+];
+const MAKE_KEYS = ['make', 'cameramake', 'manufacturer', 'tiffmake', 'exifmake'];
+const MODEL_KEYS = ['model', 'cameramodel', 'tiffmodel', 'exifmodel'];
+const ORIENTATION_KEYS = ['orientation', 'tifforientation', 'exiforientation'];
+const KEYWORDS_KEYS = ['keywords', 'tags', 'subject', 'dcsubject', 'iptckeywords'];
+const COPYRIGHT_KEYS = ['copyright', 'rights', 'copyrightnotice', 'dcrights'];
+const ARTIST_KEYS = ['artist', 'creator', 'author', 'photographer', 'byline', 'dccreator'];
+const WIDTH_KEYS = [
+  'width', 'imagewidth', 'exifimagewidth', 'pixelwidth', 'tiffimagewidth', 'pixelxdimension',
+  'exifpixelxdimension',
+];
+const HEIGHT_KEYS = [
+  'height', 'imageheight', 'exifimageheight', 'pixelheight', 'tiffimageheight', 'imagelength',
+  'pixelydimension', 'exifpixelydimension',
+];
 const DIMENSIONS_COMBINED_KEYS = ['dimensions', 'imagesize', 'size'];
-const GPS_LAT_KEYS = ['gpslatitude', 'latitude', 'lat'];
-const GPS_LAT_REF_KEYS = ['gpslatituderef', 'latituderef'];
-const GPS_LON_KEYS = ['gpslongitude', 'longitude', 'lon', 'lng'];
-const GPS_LON_REF_KEYS = ['gpslongituderef', 'longituderef'];
+const GPS_LAT_KEYS = ['gpslatitude', 'latitude', 'lat', 'exifgpslatitude'];
+const GPS_LAT_REF_KEYS = ['gpslatituderef', 'latituderef', 'exifgpslatituderef'];
+const GPS_LON_KEYS = ['gpslongitude', 'longitude', 'lon', 'lng', 'exifgpslongitude'];
+const GPS_LON_REF_KEYS = ['gpslongituderef', 'longituderef', 'exifgpslongituderef'];
 
 const ORIENTATION_LABELS: Record<string, number> = {
   'horizontal (normal)': 1,
@@ -33,7 +47,7 @@ const ORIENTATION_LABELS: Record<string, number> = {
 };
 
 function normalizeKey(key: string): string {
-  return key.toLowerCase().replace(/[\s_-]/g, '');
+  return key.toLowerCase().replace(/[\s_:-]/g, '');
 }
 
 function buildLookup(raw: RawMetadata): Map<string, unknown> {

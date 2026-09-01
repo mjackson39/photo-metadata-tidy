@@ -71,14 +71,19 @@ never blocks the fields that were fine.
 
 Key lookup is case- and separator-insensitive: `DateTimeOriginal`,
 `dateTimeOriginal`, `date_time_original`, and `Date Time Original` all
-resolve to the same field. See the alias lists in `src/normalize.ts` for
-exactly which source key names are recognized per field.
+resolve to the same field. Namespaced XMP property names such as
+`dc:title` or `photoshop:Headline` are recognized too, since the `:` is
+stripped along with everything else. See the alias lists in
+`src/normalize.ts` for exactly which source key names are recognized per
+field.
 
 ## Status
 
 Early. The alias lists cover the exiftool / browser-EXIF / manual-entry
-sources I've actually run into so far, not the full EXIF/IPTC/XMP tag
-sets. See the commit history for what's landed.
+sources I've actually run into, plus the common IPTC-IIM and XMP tag
+names for the fields this library models, but not the full IPTC/XMP tag
+sets (there's no support yet for structured fields like XMP location
+hierarchies or contact info). See the commit history for what's landed.
 
 ## Build
 
