@@ -93,6 +93,16 @@ npm run build
 
 No runtime dependencies — this is plain TypeScript compiled with `tsc`.
 
+## Tests
+
+```
+npm test
+```
+
+Runs `test/normalize.test.ts` directly against the TypeScript source with
+Node's built-in test runner and type stripping, so there's no test
+framework in the dependency list either. Requires Node 22.6 or later.
+
 ## License
 
 MIT, see [LICENSE](./LICENSE).

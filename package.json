@@ -6,7 +6,11 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "node --experimental-strip-types --test test/"
+  },
+  "engines": {
+    "node": ">=22.6.0"
   },
   "license": "MIT",
   "author": "mjackson39"
