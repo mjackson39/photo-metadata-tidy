@@ -67,6 +67,25 @@ Any field the input doesn't have, or that fails to parse, comes back as
 `null` (or `[]` for keywords) rather than throwing. Garbage in one field
 never blocks the fields that were fine.
 
+## Reading a JPEG file directly
+
+If you don't have exiftool or a browser EXIF reader in the picture,
+`readExifMetadata` pulls the fields this library cares about straight out of
+a JPEG buffer's Exif segment, in the same shape `normalizeMetadata` expects:
+
+```ts
+import { readFile } from 'node:fs/promises';
+import { readExifMetadata, normalizeMetadata } from 'photo-metadata-tidy';
+
+const bytes = await readFile('photo.jpg');
+const metadata = normalizeMetadata(readExifMetadata(bytes));
+```
+
+It only reads the tags this library normalizes (title/description are
+IPTC/XMP concepts with no EXIF equivalent, so those still come back `null`
+unless you merge in another source). A JPEG with no Exif segment, or a
+buffer that isn't a JPEG at all, comes back as `{}` rather than throwing.
+
 ## Field matching
 
 Key lookup is case- and separator-insensitive: `DateTimeOriginal`,
