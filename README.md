@@ -86,6 +86,26 @@ IPTC/XMP concepts with no EXIF equivalent, so those still come back `null`
 unless you merge in another source). A JPEG with no Exif segment, or a
 buffer that isn't a JPEG at all, comes back as `{}` rather than throwing.
 
+## CLI
+
+`exiftool -json` dumps an array of one object per file, each tagged with a
+`SourceFile` field. The bundled CLI reads that array (or a single object)
+and writes back an array of normalized records, keeping `sourceFile`
+around so you can tell which input each one came from:
+
+```
+exiftool -json *.jpg | photo-metadata-tidy > normalized.json
+```
+
+Or read from and write to files directly:
+
+```
+photo-metadata-tidy exiftool-output.json -o normalized.json
+```
+
+With no input path it reads from stdin; with no `-o`/`--output` it writes
+to stdout. `photo-metadata-tidy --help` prints the full option list.
+
 ## Field matching
 
 Key lookup is case- and separator-insensitive: `DateTimeOriginal`,
@@ -118,7 +138,7 @@ No runtime dependencies — this is plain TypeScript compiled with `tsc`.
 npm test
 ```
 
-Runs `test/normalize.test.ts` directly against the TypeScript source with
+Runs the `test/` directory directly against the TypeScript source with
 Node's built-in test runner and type stripping, so there's no test
 framework in the dependency list either. Requires Node 22.6 or later.
 

@@ -5,6 +5,9 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "photo-metadata-tidy": "dist/cli.js"
+  },
   "scripts": {
     "build": "tsc",
     "test": "node --experimental-strip-types --test test/"
