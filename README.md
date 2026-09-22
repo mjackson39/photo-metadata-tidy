@@ -86,6 +86,27 @@ IPTC/XMP concepts with no EXIF equivalent, so those still come back `null`
 unless you merge in another source). A JPEG with no Exif segment, or a
 buffer that isn't a JPEG at all, comes back as `{}` rather than throwing.
 
+## Writing XMP sidecars
+
+`toXmpSidecar` goes the other direction: given a normalized record, it
+renders an XMP packet you can write next to the image as a `.xmp` sidecar
+file, for tools that read metadata from a sidecar rather than embedding it.
+
+```ts
+import { readFile, writeFile } from 'node:fs/promises';
+import { normalizeMetadata, toXmpSidecar } from 'photo-metadata-tidy';
+
+const raw = JSON.parse(await readFile('photo.exiftool.json', 'utf8'));
+const xmp = toXmpSidecar(normalizeMetadata(raw));
+await writeFile('photo.xmp', xmp);
+```
+
+Fields that are `null` (or `[]` for keywords) are left out of the packet
+entirely rather than written as empty tags, so a sidecar only ever asserts
+what the source actually had. GPS coordinates are converted from this
+library's signed-decimal form to XMP's `degrees,minutes.fractionRef`
+convention (e.g. `40.712778` becomes `40,42.766667N`).
+
 ## CLI
 
 `exiftool -json` dumps an array of one object per file, each tagged with a
