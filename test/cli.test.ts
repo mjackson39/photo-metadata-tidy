@@ -1,18 +1,36 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeBatch, parseArgs } from '../src/cli.js';
+import { normalizeBatch, parseArgs, renderBatch } from '../src/cli.js';
 
 test('parseArgs: a bare positional argument is the input path', () => {
-  assert.deepEqual(parseArgs(['photos.json']), { help: false, input: 'photos.json' });
+  assert.deepEqual(parseArgs(['photos.json']), { help: false, format: 'json', input: 'photos.json' });
 });
 
 test('parseArgs: -o/--output take the following argument as the output path', () => {
   assert.deepEqual(parseArgs(['in.json', '-o', 'out.json']), {
     help: false,
+    format: 'json',
     input: 'in.json',
     output: 'out.json',
   });
-  assert.deepEqual(parseArgs(['--output', 'out.json']), { help: false, output: 'out.json' });
+  assert.deepEqual(parseArgs(['--output', 'out.json']), {
+    help: false,
+    format: 'json',
+    output: 'out.json',
+  });
+});
+
+test('parseArgs: -f/--format accept "json" or "xmp"', () => {
+  assert.equal(parseArgs(['-f', 'xmp']).format, 'xmp');
+  assert.equal(parseArgs(['--format', 'json']).format, 'json');
+});
+
+test('parseArgs: -f with an unsupported format is rejected', () => {
+  assert.throws(() => parseArgs(['-f', 'yaml']), /unsupported format: yaml/);
+});
+
+test('parseArgs: -f with nothing after it is rejected', () => {
+  assert.throws(() => parseArgs(['-f']), /-f requires a format/);
 });
 
 test('parseArgs: -h/--help set the help flag', () => {
@@ -60,4 +78,17 @@ test('normalizeBatch: non-object entries in the array do not throw', () => {
   const result = normalizeBatch([null, 'garbage', 42]);
   assert.equal(result.length, 3);
   for (const entry of result) assert.equal(entry.camera.make, null);
+});
+
+test('renderBatch: "json" format pretty-prints the batch with a trailing newline', () => {
+  const output = renderBatch(normalizeBatch({ Make: 'Canon' }), 'json');
+  assert.ok(output.endsWith('\n'));
+  assert.deepEqual(JSON.parse(output)[0].camera.make, 'Canon');
+});
+
+test('renderBatch: "xmp" format renders one sidecar packet per record', () => {
+  const output = renderBatch(normalizeBatch([{ Make: 'Canon' }, { Make: 'FUJIFILM' }]), 'xmp');
+  assert.equal(output.match(/<\?xpacket begin=/g)?.length, 2);
+  assert.ok(output.includes('<tiff:Make>Canon</tiff:Make>'));
+  assert.ok(output.includes('<tiff:Make>FUJIFILM</tiff:Make>'));
 });

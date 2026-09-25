@@ -1,27 +1,33 @@
 #!/usr/bin/env node
 import { readFileSync, writeFileSync } from 'node:fs';
 import { normalizeMetadata } from './normalize.js';
+import { toXmpSidecar } from './xmp.js';
 import type { NormalizedMetadata, RawMetadata } from './types.js';
+
+export type OutputFormat = 'json' | 'xmp';
 
 export interface CliOptions {
   input?: string;
   output?: string;
+  format: OutputFormat;
   help: boolean;
 }
 
-const USAGE = `Usage: photo-metadata-tidy [input.json] [-o output.json]
+const USAGE = `Usage: photo-metadata-tidy [input.json] [-o output.json] [-f json|xmp]
 
 Normalizes exiftool's "-json" output (or any JSON array/object of loose
 metadata records) into this library's fixed shape.
 
 With no input path, reads from stdin. With no -o/--output, writes to stdout.
 
-  -o, --output <path>  write the result to a file instead of stdout
-  -h, --help            show this message
+  -o, --output <path>   write the result to a file instead of stdout
+  -f, --format <format>  "json" (default) or "xmp" to emit XMP sidecar packets,
+                          one per input record, concatenated
+  -h, --help             show this message
 `;
 
 export function parseArgs(argv: string[]): CliOptions {
-  const options: CliOptions = { help: false };
+  const options: CliOptions = { help: false, format: 'json' };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === undefined) continue;
@@ -31,6 +37,13 @@ export function parseArgs(argv: string[]): CliOptions {
       const value = argv[++i];
       if (value === undefined) throw new Error(`${arg} requires a path`);
       options.output = value;
+    } else if (arg === '-f' || arg === '--format') {
+      const value = argv[++i];
+      if (value === undefined) throw new Error(`${arg} requires a format`);
+      if (value !== 'json' && value !== 'xmp') {
+        throw new Error(`unsupported format: ${value} (expected "json" or "xmp")`);
+      }
+      options.format = value;
     } else if (arg.startsWith('-')) {
       throw new Error(`unrecognized option: ${arg}`);
     } else if (options.input !== undefined) {
@@ -59,6 +72,11 @@ export function normalizeBatch(parsed: unknown): BatchResult[] {
 
 function readInput(path: string | undefined): string {
   return readFileSync(path ?? 0, 'utf8');
+}
+
+export function renderBatch(records: BatchResult[], format: OutputFormat): string {
+  if (format === 'xmp') return records.map((record) => toXmpSidecar(record)).join('\n');
+  return JSON.stringify(records, null, 2) + '\n';
 }
 
 function main(): void {
@@ -95,7 +113,7 @@ function main(): void {
     return;
   }
 
-  const output = JSON.stringify(normalizeBatch(parsed), null, 2) + '\n';
+  const output = renderBatch(normalizeBatch(parsed), options.format);
 
   if (options.output) {
     try {

@@ -127,6 +127,12 @@ photo-metadata-tidy exiftool-output.json -o normalized.json
 With no input path it reads from stdin; with no `-o`/`--output` it writes
 to stdout. `photo-metadata-tidy --help` prints the full option list.
 
+Pass `-f xmp` to get XMP sidecar packets instead of JSON: one `toXmpSidecar`
+packet per input record, concatenated. This is meant for the single-file
+case (`exiftool -json photo.jpg | photo-metadata-tidy -f xmp -o photo.xmp`);
+for a batch you'll want to split the output back into one `.xmp` file per
+photo yourself.
+
 ## Field matching
 
 Key lookup is case- and separator-insensitive: `DateTimeOriginal`,
